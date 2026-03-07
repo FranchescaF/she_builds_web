@@ -32,6 +32,9 @@ Una plataforma de transición profesional que desbloquea el potencial femenino m
 ```bash
 git clone https://github.com/Shiuu28/SheShips---Hackathon.git
 cd SHESHIPS---HACKATHON
+cd SheBuilds
+npm i
+npm run dev
 ```
 
 #### Equipo
