@@ -20,11 +20,13 @@ Una plataforma de transición profesional que desbloquea el potencial femenino m
 * Orientación en la transición de profesión
 * Crecimiento personal y profesional
 * Mentorias
+* Certificaciones
 * Networking
 
 
 ### Tecnologías
 * Figma
+* Lovable
 
 ### Instalación
 ```bash
