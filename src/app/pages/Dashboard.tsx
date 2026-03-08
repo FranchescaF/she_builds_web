@@ -6,22 +6,26 @@ import {
   BookOpen,
   TrendingUp,
   Sparkles,
-  ArrowRight,
-  Award,
-  BarChart
+  ArrowRight
 } from "lucide-react";
-import { motion } from "motion/react";
 
 export function Dashboard() {
 
-  // Mock user (después vendrá del login)
+  // Leer datos guardados desde onboarding/login
+  const storedProfile = JSON.parse(localStorage.getItem("userProfile") || "{}");
+
   const user = {
-    name: "María",
-    stack: "Diseño UX",
-    mentorshipHours: 4
+    name: storedProfile.name || "Invitada",
+    profession: storedProfile.profession || "Explorando",
+    interests: storedProfile.interests || [],
+    techLevel: storedProfile.techLevel || "Principiante",
+    timeCommitment: storedProfile.timeCommitment || ""
   };
 
-  // Mock IA insights
+  // Stack sugerido basado en intereses
+  const stack = user.interests.length > 0 ? user.interests[0] : "Explorando Tech";
+
+  // Mock IA insights (luego puede venir de IA)
   const aiInsights = {
     hiddenPotential: [
       "Gestión de crisis",
@@ -76,7 +80,7 @@ export function Dashboard() {
                 </h2>
 
                 <span className="text-sm font-medium text-purple-600 bg-purple-50 px-3 py-1 rounded-full">
-                  Destino Tech: {user.stack}
+                  Destino Tech: {stack}
                 </span>
               </div>
 
@@ -87,14 +91,23 @@ export function Dashboard() {
                 </p>
 
                 <div className="flex flex-wrap gap-2">
-                  {["Creativa", "Analítica", "Orientada a usuarios"].map((trait, i) => (
-                    <span
-                      key={i}
-                      className="px-3 py-1 text-sm bg-purple-50 text-purple-700 rounded-full font-medium"
-                    >
-                      {trait}
-                    </span>
-                  ))}
+                  {user.interests.length > 0
+                    ? user.interests.map((trait: string, i: number) => (
+                        <span
+                          key={i}
+                          className="px-3 py-1 text-sm bg-purple-50 text-purple-700 rounded-full font-medium"
+                        >
+                          {trait}
+                        </span>
+                      ))
+                    : ["Explorando", "Curiosa", "Aprendiendo"].map((trait: string, i: number) => (
+                        <span
+                          key={i}
+                          className="px-3 py-1 text-sm bg-purple-50 text-purple-700 rounded-full font-medium"
+                        >
+                          {trait}
+                        </span>
+                      ))}
                 </div>
               </div>
 
@@ -105,32 +118,9 @@ export function Dashboard() {
                 </p>
 
                 <div className="flex flex-wrap gap-2">
-                  {["Enfermería", "Atención al cliente", "Organización de procesos"].map((exp, i) => (
-                    <span
-                      key={i}
-                      className="px-3 py-1 text-sm bg-slate-100 text-slate-700 rounded-full font-medium"
-                    >
-                      {exp}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              {/* Traducción a tech */}
-              <div>
-                <p className="text-sm text-slate-500 font-medium mb-2 uppercase tracking-wider">
-                  Cómo se traduce en tech
-                </p>
-
-                <div className="flex flex-wrap gap-2">
-                  {["UX Research", "Product Thinking", "QA Testing"].map((role, i) => (
-                    <span
-                      key={i}
-                      className="px-3 py-1 text-sm bg-fuchsia-50 text-fuchsia-700 rounded-full font-semibold"
-                    >
-                      {role}
-                    </span>
-                  ))}
+                  <span className="px-3 py-1 text-sm bg-slate-100 text-slate-700 rounded-full font-medium">
+                    {user.profession}
+                  </span>
                 </div>
               </div>
 
@@ -219,7 +209,7 @@ export function Dashboard() {
 
             </div>
 
-            {/* Próxima mentoría */}
+            {/* Upcoming Mentorship */}
             <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
               <h3 className="font-bold text-slate-900 mb-4 flex items-center gap-2">
                 <Target className="w-5 h-5 text-fuchsia-500" />
