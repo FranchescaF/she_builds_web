@@ -1,167 +1,237 @@
-import { useState, useRef, useEffect } from "react";
-import { Send, Sparkles, User, Lightbulb, Map, BookOpen, Target } from "lucide-react";
+import React, { useState, useRef, useEffect } from 'react';
+import { GoogleGenAI } from '@google/genai';
+import { Send, User, Sparkles, Loader2 } from 'lucide-react';
+import Markdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+
+declare global {
+  interface ImportMeta {
+    env: Record<string, string>;
+  }
+}
+
+const SYSTEM_INSTRUCTION = `Eres una asesora profesional especializada en orientación de carrera tecnológica para mujeres que desean transicionar al sector tech. Fuiste diseñada por mujeres, para mujeres.
+
+## Tu propósito
+Ayudar a mujeres a identificar perfiles tecnológicos que se alineen con sus habilidades, experiencia previa y contexto de vida, brindando orientación clara, empática y accionable para dar sus primeros pasos en la industria tecnológica.
+
+## Cómo debes comportarte
+- Tu tono es cálido, empático y alentador, pero siempre profesional y directo. Sin infantilismos ni excesos emocionales.
+- Usas lenguaje inclusivo y en femenino cuando te dirijas a la usuaria.
+- Reconoces y valoras las habilidades previas de la usuaria, incluso si provienen de sectores no tecnológicos (docencia, salud, ventas, administración, cuidado, etc.).
+- Combates activamente los mitos limitantes y el síndrome del impostor con información real y objetiva.
+- No emites juicios sobre la situación personal, económica o académica de la usuaria.
+- Eres concisa. No das respuestas excesivamente largas. Priorizas la claridad.
+
+## Flujo de conversación
+Cuando una usuaria llega por primera vez o describe su situación, sigue este orden:
+
+1. **Saluda brevemente** y pide que describa su situación actual: su experiencia o actividad profesional previa, sus intereses, sus limitaciones de tiempo o recursos, y qué la motiva a entrar al sector tech.
+
+2. **Analiza su perfil** con base en lo que comparte y recomienda entre 2 y 4 perfiles tecnológicos que se ajusten a ella. Para cada perfil indica:
+   - Nombre del perfil (ej: UX Designer, Data Analyst, QA Tester, etc.)
+   - Por qué encaja con sus habilidades previas
+   - Nivel de demanda en el mercado laboral
+   - Tiempo estimado de formación básica (desde cero)
+   - Si requiere o no conocimientos técnicos profundos de programación
+
+3. **Comparte entre 3 y 5 recursos o tips concretos** y verificables para que pueda orientarse y comenzar. Prioriza recursos gratuitos o de bajo costo, en español cuando estén disponibles. Pueden incluir plataformas de aprendizaje, comunidades, programas de becas, certificaciones reconocidas, o iniciativas específicas para mujeres en tech.
+
+4. **Cierra con un mensaje breve de motivación**, sin caer en el exceso, que refuerce que sus habilidades previas tienen valor real en el mundo tech.
+
+## Restricciones importantes
+- Solo respondes preguntas relacionadas con orientación de carrera tecnológica, perfiles tech, habilidades transferibles, formación, recursos y transición profesional al sector tecnológico.
+- Si la usuaria hace una pregunta fuera de este ámbito (política, entretenimiento, temas personales no relacionados, etc.), respondes amablemente que tu especialidad es la orientación tech para mujeres y la invitas a retomar ese hilo.
+- No inventas recursos, plataformas o programas. Solo mencionas opciones reconocidas y verificables.
+- No prometes resultados específicos de empleo ni salarios exactos. Puedes dar rangos referenciales si la usuaria lo pregunta.
+- No reemplazas a una mentora humana ni a un servicio de orientación profesional certificado. Puedes mencionarlo si la situación lo amerita.
+
+## Ejemplo de perfiles que puedes recomendar (no limitativo)
+UX/UI Design, QA Testing / Aseguramiento de calidad, Análisis de datos, Project Management tecnológico, Marketing digital y Growth, Ciberseguridad básica, Desarrollo web frontend, Soporte técnico y Help Desk, Business Analysis, Scrum Master / Agilismo, Community Management tech, E-learning y diseño instruccional digital.
+
+## Idioma
+Siempre responde en español, de manera clara y sin tecnicismos innecesarios. Si usas un término técnico, explícalo brevemente.`;
+
+// Initialize the Gemini API client
+const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_API_KEY });
+
+type Message = {
+  id: string;
+  role: 'user' | 'model';
+  text: string;
+};
 
 export function AIGuidance() {
-  const [messages, setMessages] = useState([
+  const [messages, setMessages] = useState<Message[]>([
     {
-      id: 1,
-      sender: "ai",
-      text: "¡Hola! Soy tu guía profesional de IA. Estoy aquí para ayudarte a descubrir el mejor camino tecnológico para tus habilidades e intereses. Para empezar, ¿en qué trabajas actualmente y qué es lo que más disfrutas de ello?",
-    }
+      id: '1',
+      role: 'model',
+      text: '¡Hola! Qué gusto saludarte. Soy tu asesora de carrera tecnológica. Para poder ayudarte de la mejor manera, me encantaría conocer un poco más sobre ti. ¿Podrías contarme sobre tu experiencia profesional previa, qué te interesa del mundo tech, y si tienes alguna limitación de tiempo o recursos para estudiar?',
+    },
   ]);
-  const [inputValue, setInputValue] = useState("");
+  const [input, setInput] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const chatRef = useRef<any>(null);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+  useEffect(() => {
+    // Initialize the chat session
+    chatRef.current = ai.chats.create({
+      model: 'gemini-3-flash-preview',
+      config: {
+        systemInstruction: SYSTEM_INSTRUCTION,
+      },
+    });
+  }, []);
 
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
-  const handleSend = () => {
-    if (!inputValue.trim()) return;
-
-    // Add user message
-    const userMsg = { id: Date.now(), sender: "user", text: inputValue };
-    setMessages(prev => [...prev, userMsg]);
-    setInputValue("");
-
-    // Simulate AI response
-    setTimeout(() => {
-      let aiResponseText = "¡Eso es interesante! Basado en lo que compartiste, roles como Gestión de Producto o Investigación UX podrían encajar muy bien. Requieren una fuerte comunicación y empatía. ¿Cuánto tiempo puedes dedicar a aprender cada semana?";
-      
-      if (messages.length > 2) {
-        aiResponseText = "¡Genial! Con 5-10 horas a la semana, definitivamente puedes hacer un progreso constante. Recomiendo comenzar con nuestra mini-lección 'Intro al Diseño UX'. ¡Solo toma 15 minutos! ¿Te gustaría que la agregue a tu panel?";
-      }
-
-      setMessages(prev => [
-        ...prev, 
-        { id: Date.now() + 1, sender: "ai", text: aiResponseText }
-      ]);
-    }, 1500);
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!input.trim() || isLoading) return;
+
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      role: 'user',
+      text: input.trim(),
+    };
+
+    setMessages((prev) => [...prev, userMessage]);
+    setInput('');
+    setIsLoading(true);
+
+    try {
+      const response = await chatRef.current.sendMessage({
+        message: userMessage.text,
+      });
+
+      const modelMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: 'model',
+        text: response.text,
+      };
+
+      setMessages((prev) => [...prev, modelMessage]);
+    } catch (error) {
+      console.error('Error sending message:', error);
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: 'model',
+        text: 'Lo siento, hubo un error al procesar tu mensaje. Por favor, intenta de nuevo.',
+      };
+      setMessages((prev) => [...prev, errorMessage]);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const suggestions = [
-    "Soy maestra y quiero cambiar de carrera.",
-    "Me gusta organizar cosas y planificar.",
-    "No tengo ninguna experiencia técnica.",
-    "Soy ama de casa y busco volver a trabajar."
-  ];
-
   return (
-    <div className="flex-grow flex flex-col bg-slate-50 h-[calc(100vh-4rem)]">
-      <div className="max-w-4xl mx-auto w-full flex-grow flex flex-col p-4 sm:p-6 lg:p-8">
-        
-        {/* Header */}
-        <div className="bg-white rounded-t-3xl p-6 border-b border-slate-100 shadow-sm flex items-center justify-between z-10">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-fuchsia-500 rounded-2xl flex items-center justify-center shadow-md">
-              <Sparkles className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-slate-900">Guía Profesional IA</h1>
-              <p className="text-sm text-slate-500">Te ayudo a descubrir tu camino, no prometo empleos.</p>
-            </div>
-          </div>
-          <div className="hidden sm:flex items-center gap-2 text-xs font-medium text-slate-500 bg-slate-100 px-3 py-1.5 rounded-full">
-            <Lightbulb className="w-4 h-4 text-amber-500" /> Consejos: Sé honesta sobre tu tiempo
-          </div>
+    <div className="flex flex-col h-screen bg-stone-50 text-stone-900 font-sans">
+      {/* Header */}
+      <header className="bg-white border-b border-stone-200 px-6 py-4 flex items-center shadow-sm z-10">
+        <div className="bg-emerald-100 p-2 rounded-full mr-4">
+          <Sparkles className="w-6 h-6 text-emerald-600" />
         </div>
+        <div>
+          <h1 className="text-xl font-semibold text-stone-800">Tech Career Advisor</h1>
+          <p className="text-sm text-stone-500">Orientación profesional para mujeres en tecnología</p>
+        </div>
+      </header>
 
-        {/* Chat Area */}
-        <div className="flex-grow bg-white overflow-y-auto p-6 space-y-6 shadow-sm border-x border-slate-100 scrollbar-hide">
+      {/* Chat Area */}
+      <main className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
+        <div className="max-w-3xl mx-auto space-y-6">
           {messages.map((msg) => (
-            <div key={msg.id} className={`flex ${msg.sender === "user" ? "justify-end" : "justify-start"}`}>
-              <div className={`flex gap-3 max-w-[85%] sm:max-w-[75%] ${msg.sender === "user" ? "flex-row-reverse" : "flex-row"}`}>
-                
+            <div
+              key={msg.id}
+              className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+            >
+              <div
+                className={`flex max-w-[85%] sm:max-w-[75%] ${
+                  msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'
+                }`}
+              >
                 {/* Avatar */}
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-1 ${
-                  msg.sender === "user" ? "bg-slate-200" : "bg-purple-100"
-                }`}>
-                  {msg.sender === "user" ? (
-                    <User className="w-4 h-4 text-slate-600" />
-                  ) : (
-                    <Sparkles className="w-4 h-4 text-purple-600" />
-                  )}
+                <div
+                  className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center mt-1 ${
+                    msg.role === 'user'
+                      ? 'bg-stone-200 text-stone-600 ml-3'
+                      : 'bg-emerald-600 text-white mr-3'
+                  }`}
+                >
+                  {msg.role === 'user' ? <User size={18} /> : <Sparkles size={18} />}
                 </div>
 
                 {/* Message Bubble */}
-                <div className={`p-4 rounded-2xl text-sm md:text-base leading-relaxed ${
-                  msg.sender === "user" 
-                    ? "bg-slate-900 text-white rounded-tr-sm" 
-                    : "bg-purple-50 text-slate-800 rounded-tl-sm border border-purple-100 shadow-sm"
-                }`}>
-                  {msg.text}
-                  
-                  {/* Optional AI Add-ons (Mocked for context) */}
-                  {msg.sender === "ai" && messages.length > 2 && msg.id === messages[messages.length-1].id && (
-                     <div className="mt-4 bg-white p-3 rounded-xl border border-purple-100 flex items-center gap-3 shadow-sm">
-                       <div className="w-10 h-10 bg-pink-100 rounded-lg flex items-center justify-center">
-                         <Map className="w-5 h-5 text-pink-600" />
-                       </div>
-                       <div>
-                         <p className="font-bold text-xs">Ruta Sugerida: Diseño UX</p>
-                         <button className="text-xs text-purple-600 font-semibold mt-0.5 hover:underline">Ver detalles</button>
-                       </div>
-                     </div>
+                <div
+                  className={`px-5 py-4 rounded-2xl shadow-sm ${
+                    msg.role === 'user'
+                      ? 'bg-stone-800 text-white rounded-tr-none'
+                      : 'bg-white border border-stone-200 text-stone-800 rounded-tl-none'
+                  }`}
+                >
+                  {msg.role === 'user' ? (
+                    <p className="whitespace-pre-wrap">{msg.text}</p>
+                  ) : (
+                    <div className="markdown-body prose prose-stone prose-sm sm:prose-base max-w-none">
+                      <Markdown remarkPlugins={[remarkGfm]}>{msg.text}</Markdown>
+                    </div>
                   )}
                 </div>
               </div>
             </div>
           ))}
-          {/* Typing Indicator Placeholder could go here */}
-          <div ref={messagesEndRef} />
-        </div>
-
-        {/* Input Area */}
-        <div className="bg-white rounded-b-3xl p-4 border-t border-slate-100 shadow-sm">
-          {/* Suggestions */}
-          {messages.length === 1 && (
-            <div className="flex gap-2 overflow-x-auto pb-4 scrollbar-hide">
-              {suggestions.map((suggestion, idx) => (
-                <button 
-                  key={idx}
-                  onClick={() => setInputValue(suggestion)}
-                  className="whitespace-nowrap px-4 py-2 bg-slate-50 hover:bg-purple-50 hover:text-purple-700 text-slate-600 text-xs font-medium rounded-full border border-slate-200 transition-colors"
-                >
-                  {suggestion}
-                </button>
-              ))}
+          {isLoading && (
+            <div className="flex justify-start">
+              <div className="flex max-w-[85%] sm:max-w-[75%] flex-row">
+                <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center mt-1 bg-emerald-600 text-white mr-3">
+                  <Sparkles size={18} />
+                </div>
+                <div className="px-5 py-4 rounded-2xl shadow-sm bg-white border border-stone-200 text-stone-800 rounded-tl-none flex items-center space-x-2">
+                  <Loader2 className="w-5 h-5 animate-spin text-emerald-600" />
+                  <span className="text-stone-500 text-sm">Analizando tu perfil...</span>
+                </div>
+              </div>
             </div>
           )}
+          <div ref={messagesEndRef} />
+        </div>
+      </main>
 
-          <div className="relative flex items-end gap-2">
-            <textarea
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              onKeyDown={handleKeyDown}
+      {/* Input Area */}
+      <footer className="bg-white border-t border-stone-200 p-4 sm:p-6">
+        <div className="max-w-3xl mx-auto">
+          <form
+            onSubmit={handleSubmit}
+            className="flex items-center bg-stone-100 rounded-full border border-stone-300 focus-within:border-emerald-500 focus-within:ring-1 focus-within:ring-emerald-500 transition-all shadow-sm overflow-hidden"
+          >
+            <input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
               placeholder="Escribe tu mensaje aquí..."
-              className="w-full bg-slate-50 border border-slate-200 rounded-2xl pl-4 pr-12 py-3.5 text-sm md:text-base focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none min-h-[52px] max-h-32 scrollbar-hide"
-              rows={1}
+              className="flex-1 bg-transparent px-6 py-4 focus:outline-none text-stone-800 placeholder-stone-400"
+              disabled={isLoading}
             />
-            <button 
-              onClick={handleSend}
-              disabled={!inputValue.trim()}
-              className="absolute right-2 bottom-2 p-2 bg-purple-600 hover:bg-purple-700 disabled:bg-slate-300 text-white rounded-xl transition-colors shadow-sm"
+            <button
+              type="submit"
+              disabled={!input.trim() || isLoading}
+              className="p-3 mr-2 rounded-full bg-emerald-600 text-white hover:bg-emerald-700 disabled:bg-stone-300 disabled:text-stone-500 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
             >
-              <Send className="w-4 h-4" />
+              <Send size={20} />
             </button>
-          </div>
-          <p className="text-center text-[10px] text-slate-400 mt-2">
-            La IA proporciona orientación basada en tu información, no garantiza resultados profesionales.
+          </form>
+          <p className="text-center text-xs text-stone-400 mt-3">
+            La asesora puede cometer errores. Considera verificar la información importante.
           </p>
         </div>
-
-      </div>
+      </footer>
     </div>
   );
 }

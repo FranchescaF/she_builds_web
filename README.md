@@ -34,12 +34,15 @@ Nuestra plataforma utiliza un motor de lenguaje avanzado para **traducir experie
 
 #### 📸 Figma del Proyecto
 
-## 🚀 Instalación y Uso
 
-1. Clona el repositorio:
-   ```bash
-   git clone [https://github.com/Shiuu28/SheShips---Hackathon.git](https://github.com/Shiuu28/SheShips---Hackathon.git)
-   cd SHESHIPS---HACKATHON
+## 🚀 Instalación y Uso
+```bash
+    git clone [https://github.com/Shiuu28/SheShips---Hackathon.git](https://github.com/Shiuu28/SheShips---Hackathon.git)
+    cd SHESHIPS---HACKATHON
+    cd SheBuilds
+    npm i
+    npm run dev
+```
 
 #### 👩‍💻 Equipo
 * Katty Aquino → Frontend
