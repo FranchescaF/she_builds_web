@@ -43,7 +43,5 @@ Nuestra plataforma utiliza un motor de lenguaje avanzado para **traducir experie
 
 #### 👩‍💻 Equipo
 * Katty Aquino → Frontend
-* Alondra Leon → UX/UI
 * Fatima Zelaya → Full Stack
-* María Gonzales → Herramientas No Code (Lovable) & Biologa y Docente
 * Shiuu Valenzuela → AI & QA
