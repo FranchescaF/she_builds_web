@@ -64,11 +64,13 @@ Un sistema de intercambio de conocimiento entre mentoras y aprendices.
 ---
 
 ## 🔗 Enlaces Importantes
-* 🚀 **Despliegue (Live Demo):** [https://shebuildsweb.vercel.app/] Vercel Deploy
+* 🚀 **Despliegue (Live Demo):** ([Demo](https://shebuildsweb.vercel.app))
 
-* 🎨 **Prototipo y Diseño:** [ttps://www.figma.com/design/GMcN7DBfPffsmmv7VkDp9J/SheShips_Wireframes?node-id=0-1&m=dev&t=2AqtYSjIUZ2riU3A-1](Wireframes iniciales)
 
-* 📊 **Presentación (Pitch):** [https://www.canva.com/design/DAHDVNSQWG8/SNYDzaQZTs_F_VQVCxuB9A/view?utm_content=DAHDVNSQWG8&utm_campaign=designshare&utm_medium=link2&utm_source=uniquelinks&utlId=h93f267a65c] (Canva)
+* 🎨 **Prototipo y Diseño:** ([Figma](https://www.figma.com/design/GMcN7DBfPffsmmv7VkDp9J/SheShips_Wireframes?node-id=0-1&m=dev&t=2AqtYSjIUZ2riU3A-1))
+
+
+* 📊 **Presentación (Pitch):**  ([Canva](https://www.canva.com/design/DAHDVNSQWG8/SNYDzaQZTs_F_VQVCxuB9A/view?utm_content=DAHDVNSQWG8&utm_campaign=designshare&utm_medium=link2&utm_source=uniquelinks&utlId=h93f267a65c))
 
 
 ## 🚀 Instalación y Uso
